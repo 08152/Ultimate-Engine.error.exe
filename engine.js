@@ -14,7 +14,7 @@ class Time {
     static deltaTime = 0;
     static time = 0;
 }
-
+ 
 // ==========================================
 // 2. UNITY ARCHITEKTUR: COMPONENT SYSTEM
 // ==========================================
