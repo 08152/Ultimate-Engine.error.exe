@@ -12,12 +12,6 @@ body, html {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-#gameCanvas {
-    display: block;
-    width: 100vw;
-    height: 100vh;
-}
-
 #ui-container {
     position: absolute;
     top: 20px;
@@ -28,6 +22,7 @@ body, html {
     border-radius: 8px;
     pointer-events: none;
     border: 1px solid #444;
+    z-index: 10;
 }
 
 h1 {
