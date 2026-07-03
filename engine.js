@@ -1,3 +1,18 @@
+// Wir importieren punktuell nur die absolut notwendigen Kern-Klassen
+import { 
+    Scene as ThreeScene, 
+    PerspectiveCamera, 
+    WebGLRenderer, 
+    BoxGeometry, 
+    MeshStandardMaterial, 
+    Mesh, 
+    AmbientLight, 
+    DirectionalLight, 
+    GridHelper,
+    Clock,
+    MathUtils
+} from 'three';
+
 // ==========================================
 // 1. ENGINE SYSTEME & UTILITIES (Input, Time)
 // ==========================================
@@ -29,9 +44,9 @@ class Component {
 class Transform extends Component {
     constructor() {
         super();
-        this.position = new THREE.Vector3(0, 0, 0);
-        this.rotation = new THREE.Vector3(0, 0, 0);
-        this.scale = new THREE.Vector3(1, 1, 1);
+        this.position = { x: 0, y: 0, z: 0 };
+        this.rotation = { x: 0, y: 0, z: 0 };
+        this.scale = { x: 1, y: 1, z: 1 };
     }
 }
 
@@ -42,23 +57,23 @@ class MeshRenderer extends Component {
     }
 
     createBox(width, height, depth, color = 0x00ff99) {
-        const geometry = new THREE.BoxGeometry(width, height, depth);
-        const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
-        this.mesh = new THREE.Mesh(geometry, material);
+        const geometry = new BoxGeometry(width, height, depth);
+        const material = new MeshStandardMaterial({ color: color, roughness: 0.4 });
+        this.mesh = new Mesh(geometry, material);
         
-        // Greift sicher auf die laufende Engine-Instanz zu
         Engine.Instance.renderer3D.scene.add(this.mesh);
     }
 
     update() {
         if (!this.mesh) return;
-        this.mesh.position.copy(this.transform.position);
+        // Synchronisation der logischen GameEngine-Werte mit dem Three.js Render-Objekt
+        this.mesh.position.set(this.transform.position.x, this.transform.position.y, this.transform.position.z);
         this.mesh.rotation.set(
-            THREE.MathUtils.degToRad(this.transform.rotation.x),
-            THREE.MathUtils.degToRad(this.transform.rotation.y),
-            THREE.MathUtils.degToRad(this.transform.rotation.z)
+            MathUtils.degToRad(this.transform.rotation.x),
+            MathUtils.degToRad(this.transform.rotation.y),
+            MathUtils.degToRad(this.transform.rotation.z)
         );
-        this.mesh.scale.copy(this.transform.scale);
+        this.mesh.scale.set(this.transform.scale.x, this.transform.scale.y, this.transform.scale.z);
     }
 }
 
@@ -93,18 +108,18 @@ class Scene {
 }
 
 // ==========================================
-// 4. THREE.JS WRAPPER
+// 4. MINI-RENDERER WRAPPER
 // ==========================================
 class Renderer3D {
     constructor() {
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x111111);
+        this.scene = new ThreeScene();
+        this.scene.background = null;
 
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(0, 4, 7);
         this.camera.lookAt(0, 0, 0);
 
-        this.webGLRenderer = new THREE.WebGLRenderer({ antialias: true });
+        this.webGLRenderer = new WebGLRenderer({ antialias: true });
         this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.webGLRenderer.domElement);
 
@@ -113,10 +128,10 @@ class Renderer3D {
     }
 
     setupLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const dirLight = new DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 10, 7);
         this.scene.add(dirLight);
     }
@@ -133,13 +148,15 @@ class Renderer3D {
 }
 
 // ==========================================
-// 5. GAMEPLAY LOGIK
+// 5. GAMEPLAY LOGIK (Custom Component)
 // ==========================================
 class PlayerController extends Component {
     update() {
+        // Kontinuierliche Rotation im Raum
         this.transform.rotation.y += 45 * Time.deltaTime;
         this.transform.rotation.x += 15 * Time.deltaTime;
 
+        // Bewegung über Input (WASD / Pfeiltasten)
         const moveSpeed = 5.0;
         if (Input.getKey('arrowup') || Input.getKey('w')) this.transform.position.z -= moveSpeed * Time.deltaTime;
         if (Input.getKey('arrowdown') || Input.getKey('s')) this.transform.position.z += moveSpeed * Time.deltaTime;
@@ -155,18 +172,18 @@ class Engine {
     static Instance = null;
 
     constructor() {
-        Engine.Instance = this; // Singleton-Zuweisung für globalen Zugriff
+        Engine.Instance = this;
         Input.init();
         this.renderer3D = new Renderer3D();
         this.activeScene = new Scene("Main Scene");
-        this.clock = new THREE.Clock();
+        this.clock = new Clock();
         this.fpsContainer = document.getElementById('fps-counter');
         this.fpsTimer = 0;
     }
 
     start() {
-        // Grid Helper direkt hinzufügen
-        const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x333333);
+        // Gitterboden zur Orientierung im 3D-Raum
+        const gridHelper = new GridHelper(20, 20, 0x555555, 0x333333);
         gridHelper.position.y = -1;
         this.renderer3D.scene.add(gridHelper);
 
