@@ -35,7 +35,6 @@ class Transform extends Component {
     }
 }
 
-// Koppelt ein Three.js Mesh an ein Unity GameObject
 class MeshRenderer extends Component {
     constructor() {
         super();
@@ -47,13 +46,12 @@ class MeshRenderer extends Component {
         const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
         this.mesh = new THREE.Mesh(geometry, material);
         
-        // Dem globalen Three.js Scene-Graph hinzufügen
-        engine.renderer3D.scene.add(this.mesh);
+        // Greift sicher auf die laufende Engine-Instanz zu
+        Engine.Instance.renderer3D.scene.add(this.mesh);
     }
 
     update() {
         if (!this.mesh) return;
-        // Synchronisiere die logischen Transform-Werte mit dem Three.js Mesh
         this.mesh.position.copy(this.transform.position);
         this.mesh.rotation.set(
             THREE.MathUtils.degToRad(this.transform.rotation.x),
@@ -86,9 +84,6 @@ class GameObject {
     }
 }
 
-// ==========================================
-// 4. UNITY ARCHITEKTUR: SCENE SYSTEM
-// ==========================================
 class Scene {
     constructor(name) {
         this.name = name;
@@ -98,7 +93,7 @@ class Scene {
 }
 
 // ==========================================
-// 5. THREE.JS WRAPPER (Renderer & Environment)
+// 4. THREE.JS WRAPPER
 // ==========================================
 class Renderer3D {
     constructor() {
@@ -106,7 +101,7 @@ class Renderer3D {
         this.scene.background = new THREE.Color(0x111111);
 
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 4, 7); // Leicht angehoben für bessere Sicht
+        this.camera.position.set(0, 4, 7);
         this.camera.lookAt(0, 0, 0);
 
         this.webGLRenderer = new THREE.WebGLRenderer({ antialias: true });
@@ -138,19 +133,13 @@ class Renderer3D {
 }
 
 // ==========================================
-// 6. CUSTOM GAME CODE (Gameplay Script)
+// 5. GAMEPLAY LOGIK
 // ==========================================
 class PlayerController extends Component {
-    start() {
-        this.transform.position.set(0, 0, 0);
-    }
-
     update() {
-        // Kontinuierliche Eigenrotation
         this.transform.rotation.y += 45 * Time.deltaTime;
         this.transform.rotation.x += 15 * Time.deltaTime;
 
-        // Bewegung über Input-Abfrage (WASD / Pfeiltasten)
         const moveSpeed = 5.0;
         if (Input.getKey('arrowup') || Input.getKey('w')) this.transform.position.z -= moveSpeed * Time.deltaTime;
         if (Input.getKey('arrowdown') || Input.getKey('s')) this.transform.position.z += moveSpeed * Time.deltaTime;
@@ -159,19 +148,14 @@ class PlayerController extends Component {
     }
 }
 
-class EnvironmentSetup {
-    static createGrid(scene) {
-        const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x333333);
-        gridHelper.position.y = -1; // Leicht unter dem Würfel platziert
-        scene.add(gridHelper);
-    }
-}
-
 // ==========================================
-// 7. ENGINE CORE & GAME LOOP
+// 6. ENGINE CORE & GAME LOOP
 // ==========================================
 class Engine {
+    static Instance = null;
+
     constructor() {
+        Engine.Instance = this; // Singleton-Zuweisung für globalen Zugriff
         Input.init();
         this.renderer3D = new Renderer3D();
         this.activeScene = new Scene("Main Scene");
@@ -181,14 +165,15 @@ class Engine {
     }
 
     start() {
-        EnvironmentSetup.createGrid(this.renderer3D.scene);
+        // Grid Helper direkt hinzufügen
+        const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x333333);
+        gridHelper.position.y = -1;
+        this.renderer3D.scene.add(gridHelper);
 
-        // Erst den Awake/Start-Lifecycle für alle Komponenten aufrufen
         for (const go of this.activeScene.gameObjects) {
             for (const comp of go.components) comp.start();
         }
         
-        // Loop starten
         this.renderer3D.webGLRenderer.setAnimationLoop(() => this.loop());
     }
 
@@ -196,38 +181,29 @@ class Engine {
         Time.deltaTime = this.clock.getDelta();
         Time.time = this.clock.getElapsedTime();
 
-        // FPS-Anzeige aktualisieren
         this.fpsTimer += Time.deltaTime;
         if (this.fpsTimer >= 0.5) {
             this.fpsContainer.innerText = Math.round(1 / Time.deltaTime);
             this.fpsTimer = 0;
         }
 
-        // Update Logik & Synchronisation
         for (const go of this.activeScene.gameObjects) {
             for (const comp of go.components) comp.update();
         }
 
-        // Zeichnen
         this.renderer3D.render();
     }
 }
 
 // ==========================================
-// 8. INITIALISIERUNG & SCENE SETUP
+// 7. INITIALISIERUNG
 // ==========================================
 const engine = new Engine();
 
-// 1. GameObject erstellen
 const player = new GameObject("PlayerCube");
-
-// 2. MeshRenderer hinzufügen und Box ERZEUGEN
 const meshRenderer = player.addComponent(MeshRenderer);
-meshRenderer.createBox(1.5, 1.5, 1.5, 0x00ff99); // Würfel wird direkt initialisiert
-
-// 3. Controller-Skript für Logik und Input anhängen
+meshRenderer.createBox(1.5, 1.5, 1.5, 0x00ff99);
 player.addComponent(PlayerController);
 
-// 4. Der Engine übergeben und starten
 engine.activeScene.addGameObject(player);
 engine.start();
