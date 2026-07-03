@@ -29,7 +29,6 @@ class Component {
 class Transform extends Component {
     constructor() {
         super();
-        // Unity-ähnliche Properties, die wir später mit Three.js synchronisieren
         this.position = new THREE.Vector3(0, 0, 0);
         this.rotation = new THREE.Vector3(0, 0, 0);
         this.scale = new THREE.Vector3(1, 1, 1);
@@ -43,7 +42,6 @@ class MeshRenderer extends Component {
         this.mesh = null;
     }
 
-    // Hilfsmethode zum Erstellen eines Standard-Würfels
     createBox(width, height, depth, color = 0x00ff99) {
         const geometry = new THREE.BoxGeometry(width, height, depth);
         const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
@@ -104,17 +102,15 @@ class Scene {
 // ==========================================
 class Renderer3D {
     constructor() {
-        // Initialisiere die Three.js Core-Komponenten
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x111111);
 
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 3, 6);
+        this.camera.position.set(0, 4, 7); // Leicht angehoben für bessere Sicht
         this.camera.lookAt(0, 0, 0);
 
         this.webGLRenderer = new THREE.WebGLRenderer({ antialias: true });
         this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
-        this.webGLRenderer.shadowMap.enabled = true;
         document.body.appendChild(this.webGLRenderer.domElement);
 
         this.setupLights();
@@ -122,11 +118,9 @@ class Renderer3D {
     }
 
     setupLights() {
-        // Umgebungslicht
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        // Gerichtetes Licht (Sonne) mit Schatten
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 10, 7);
         this.scene.add(dirLight);
@@ -149,18 +143,15 @@ class Renderer3D {
 class PlayerController extends Component {
     start() {
         this.transform.position.set(0, 0, 0);
-        
-        // Hole die MeshRenderer-Komponente und erstelle die 3D-Form
-        const mr = this.gameObject.getComponent(MeshRenderer);
-        if (mr) mr.createBox(1.5, 1.5, 1.5, 0x00ff99);
     }
 
     update() {
-        // Automatische, kontinuierliche Rotation im Raum
-        this.transform.rotation.y += 30 * Time.deltaTime;
+        // Kontinuierliche Eigenrotation
+        this.transform.rotation.y += 45 * Time.deltaTime;
+        this.transform.rotation.x += 15 * Time.deltaTime;
 
         // Bewegung über Input-Abfrage (WASD / Pfeiltasten)
-        const moveSpeed = 4.0;
+        const moveSpeed = 5.0;
         if (Input.getKey('arrowup') || Input.getKey('w')) this.transform.position.z -= moveSpeed * Time.deltaTime;
         if (Input.getKey('arrowdown') || Input.getKey('s')) this.transform.position.z += moveSpeed * Time.deltaTime;
         if (Input.getKey('arrowleft') || Input.getKey('a')) this.transform.position.x -= moveSpeed * Time.deltaTime;
@@ -168,11 +159,10 @@ class PlayerController extends Component {
     }
 }
 
-// Ein einfacher Boden, damit die räumliche Bewegung sichtbar wird
 class EnvironmentSetup {
     static createGrid(scene) {
-        const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
-        gridHelper.position.y = -0.75;
+        const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x333333);
+        gridHelper.position.y = -1; // Leicht unter dem Würfel platziert
         scene.add(gridHelper);
     }
 }
@@ -185,16 +175,15 @@ class Engine {
         Input.init();
         this.renderer3D = new Renderer3D();
         this.activeScene = new Scene("Main Scene");
-        this.clock = new THREE.Clock(); // Three.js eigener Zeitmesser
+        this.clock = new THREE.Clock();
         this.fpsContainer = document.getElementById('fps-counter');
         this.fpsTimer = 0;
     }
 
     start() {
-        // Dekoration für die Welt erstellen
         EnvironmentSetup.createGrid(this.renderer3D.scene);
 
-        // Start-Lifecycle für alle Entities ausführen
+        // Erst den Awake/Start-Lifecycle für alle Komponenten aufrufen
         for (const go of this.activeScene.gameObjects) {
             for (const comp of go.components) comp.start();
         }
@@ -204,23 +193,22 @@ class Engine {
     }
 
     loop() {
-        // Zeitberechnung über die Three.js Clock
         Time.deltaTime = this.clock.getDelta();
         Time.time = this.clock.getElapsedTime();
 
-        // FPS-Anzeige im UI-Overlay aktualisieren
+        // FPS-Anzeige aktualisieren
         this.fpsTimer += Time.deltaTime;
         if (this.fpsTimer >= 0.5) {
             this.fpsContainer.innerText = Math.round(1 / Time.deltaTime);
             this.fpsTimer = 0;
         }
 
-        // 1. Update Loop (Ruft alle Game-Logiken und Transform-Synchronisationen auf)
+        // Update Logik & Synchronisation
         for (const go of this.activeScene.gameObjects) {
             for (const comp of go.components) comp.update();
         }
 
-        // 2. Render Loop (Übergibt den fertigen Scene-Graph an WebGL)
+        // Zeichnen
         this.renderer3D.render();
     }
 }
@@ -230,13 +218,16 @@ class Engine {
 // ==========================================
 const engine = new Engine();
 
-// Erzeuge das Spieler-Objekt
+// 1. GameObject erstellen
 const player = new GameObject("PlayerCube");
 
-// Hänge die Engine-Komponenten an (Reihenfolge ist egal)
-player.addComponent(MeshRenderer);
+// 2. MeshRenderer hinzufügen und Box ERZEUGEN
+const meshRenderer = player.addComponent(MeshRenderer);
+meshRenderer.createBox(1.5, 1.5, 1.5, 0x00ff99); // Würfel wird direkt initialisiert
+
+// 3. Controller-Skript für Logik und Input anhängen
 player.addComponent(PlayerController);
 
-// GameObject der Szene hinzufügen und Engine starten
+// 4. Der Engine übergeben und starten
 engine.activeScene.addGameObject(player);
 engine.start();
