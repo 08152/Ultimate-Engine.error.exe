@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Unity-like 3D Engine</title>
+    <title>Three.js Unity-like Engine (Offline)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="ui-container">
-        <h1>Mini Unity Engine</h1>
+        <h1>Three.js Unity Engine</h1>
         <p>FPS: <span id="fps-counter">0</span></p>
-        <p>Steuerung: Pfeiltasten / WASD zum Drehen des Würfels</p>
+        <p>Steuerung: WASD / Pfeiltasten zum Bewegen</p>
     </div>
-    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Lokale Three.js Bibliothek -->
+    <script src="three.min.js"></script>
+    <!-- Unser Engine Code -->
     <script src="engine.js"></script>
 </body>
 </html>
