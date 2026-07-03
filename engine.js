@@ -1,18 +1,3 @@
-// Wir importieren punktuell nur die absolut notwendigen Kern-Klassen
-import { 
-    Scene as ThreeScene, 
-    PerspectiveCamera, 
-    WebGLRenderer, 
-    BoxGeometry, 
-    MeshStandardMaterial, 
-    Mesh, 
-    AmbientLight, 
-    DirectionalLight, 
-    GridHelper,
-    Clock,
-    MathUtils
-} from 'three';
-
 // ==========================================
 // 1. ENGINE SYSTEME & UTILITIES (Input, Time)
 // ==========================================
@@ -57,9 +42,10 @@ class MeshRenderer extends Component {
     }
 
     createBox(width, height, depth, color = 0x00ff99) {
-        const geometry = new BoxGeometry(width, height, depth);
-        const material = new MeshStandardMaterial({ color: color, roughness: 0.4 });
-        this.mesh = new Mesh(geometry, material);
+        // Nutzt die geladenen Core-Komponenten aus dem globalen THREE-Namensraum
+        const geometry = new THREE.BoxGeometry(width, height, depth);
+        const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
+        this.mesh = new THREE.Mesh(geometry, material);
         
         Engine.Instance.renderer3D.scene.add(this.mesh);
     }
@@ -69,9 +55,9 @@ class MeshRenderer extends Component {
         // Synchronisation der logischen GameEngine-Werte mit dem Three.js Render-Objekt
         this.mesh.position.set(this.transform.position.x, this.transform.position.y, this.transform.position.z);
         this.mesh.rotation.set(
-            MathUtils.degToRad(this.transform.rotation.x),
-            MathUtils.degToRad(this.transform.rotation.y),
-            MathUtils.degToRad(this.transform.rotation.z)
+            THREE.MathUtils.degToRad(this.transform.rotation.x),
+            THREE.MathUtils.degToRad(this.transform.rotation.y),
+            THREE.MathUtils.degToRad(this.transform.rotation.z)
         );
         this.mesh.scale.set(this.transform.scale.x, this.transform.scale.y, this.transform.scale.z);
     }
@@ -112,14 +98,14 @@ class Scene {
 // ==========================================
 class Renderer3D {
     constructor() {
-        this.scene = new ThreeScene();
+        this.scene = new THREE.Scene();
         this.scene.background = null;
 
-        this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(0, 4, 7);
         this.camera.lookAt(0, 0, 0);
 
-        this.webGLRenderer = new WebGLRenderer({ antialias: true });
+        this.webGLRenderer = new THREE.WebGLRenderer({ antialias: true });
         this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.webGLRenderer.domElement);
 
@@ -128,10 +114,10 @@ class Renderer3D {
     }
 
     setupLights() {
-        const ambientLight = new AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        const dirLight = new DirectionalLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 10, 7);
         this.scene.add(dirLight);
     }
@@ -176,14 +162,14 @@ class Engine {
         Input.init();
         this.renderer3D = new Renderer3D();
         this.activeScene = new Scene("Main Scene");
-        this.clock = new Clock();
+        this.clock = new THREE.Clock();
         this.fpsContainer = document.getElementById('fps-counter');
         this.fpsTimer = 0;
     }
 
     start() {
         // Gitterboden zur Orientierung im 3D-Raum
-        const gridHelper = new GridHelper(20, 20, 0x555555, 0x333333);
+        const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x333333);
         gridHelper.position.y = -1;
         this.renderer3D.scene.add(gridHelper);
 
