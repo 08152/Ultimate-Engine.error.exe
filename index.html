@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Unity-like Engine (Offline)</title>
+    <title>Schlanke Three.js Engine (GitHub Web)</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Definiert die Modul-Pfade für schlanke ESM-Imports -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com"
+        }
+      }
+    </script>
 </head>
 <body>
     <div id="ui-container">
-        <h1>Three.js Unity Engine</h1>
+        <h1>Modular Three.js Engine</h1>
         <p>FPS: <span id="fps-counter">0</span></p>
         <p>Steuerung: WASD / Pfeiltasten zum Bewegen</p>
     </div>
-    
-    <!-- Lokale Three.js Bibliothek -->
-    <script src="three.min.js"></script>
-    <!-- Unser Engine Code -->
-    <script src="engine.js"></script>
+    <script type="module" src="engine.js"></script>
 </body>
 </html>
- 
